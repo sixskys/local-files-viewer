@@ -3,6 +3,7 @@
 
 	import Icon from '$lib/Icon.svelte';
 	import { page } from '$app/stores';
+	import { loop_guard } from 'svelte/internal';
 
 	export let files: File[];
 	export let post: Post;
@@ -12,6 +13,9 @@
 	if (error) {
 		console.error(error);
 	}
+
+	const query = ($page.url.searchParams.get('query') || '').toLowerCase();
+	const doesLineMatchQuery = (line: string): boolean => line.toLowerCase().includes(query || '');
 
 	$: filePaths = $page.params.file.split('/').filter((e) => e);
 </script>
@@ -28,7 +32,13 @@
 <main>
 	<div class="m-8 mb-4">
 		<form action="" method="get">
-			<input type="search" name="query" id="query" class="input input-bordered w-full border-2" />
+			<input
+				type="search"
+				name="query"
+				id="query"
+				value={query}
+				class="input input-bordered w-full border-2"
+			/>
 		</form>
 		<div class="text-sm breadcrumbs mt-4 bg-base-200 rounded-lg py-4 px-5">
 			<ul>
@@ -63,7 +73,20 @@
 		{/if}
 
 		{#if post}
-			<pre class="bg-base-200 p-10">{post.content}</pre>
+			{#if query}
+				<div class="bg-base-200 p-10" id="content-when-query">
+					{#each post.content.split('\n') as line}
+						{@const matches = doesLineMatchQuery(line)}
+						{#if line === '' || line === '\r'}
+							<br />
+						{:else}
+							<p class:bg-yellow-200={matches} class:text-black={matches}>{line}</p>
+						{/if}
+					{/each}
+				</div>
+			{:else}
+				<pre class="bg-base-200 p-10">{post.content}</pre>
+			{/if}
 		{/if}
 
 		{#if stats}
@@ -104,9 +127,18 @@
 
 	pre {
 		display: block;
-		overflow: auto;
+		overflow-y: auto;
 		white-space: pre-line;
 		word-wrap: break-word;
 		height: 100%;
+	}
+
+	#content-when-query {
+		font-family: monospace;
+		overflow: auto;
+	}
+
+	#content-when-query {
+		font-size: 1rem;
 	}
 </style>

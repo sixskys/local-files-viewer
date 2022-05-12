@@ -1,6 +1,5 @@
 add disabling effects when empty next/prev links
 coloring
-highlighted lines when search query
 handle mime types
 handle images
 recursive size for directorys
